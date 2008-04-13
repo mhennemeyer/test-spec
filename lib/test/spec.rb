@@ -7,6 +7,33 @@
 #
 
 require 'test/unit'
+require 'test/unit/collector'
+require 'test/unit/collector/objectspace'
+
+module Test
+  module Unit
+    module Collector
+      class ObjectSpace
+        
+        # Open up the ObjectSpace Collector to check to see if we have set an ignore flag.
+        # TODO rename to ignore, its really ignore and not disabled
+        # TODO test this
+        def collect(name=NAME)
+          suite = TestSuite.new(name)
+          sub_suites = []
+          @source.each_object(Class) do |klass|
+            if (Test::Unit::TestCase > klass) && !klass.instance_variable_get(:@__ignore)
+              add_suite(sub_suites, klass.suite)
+            end
+          end
+          sort(sub_suites).each{|s| suite << s}
+          suite
+        end
+          
+      end
+    end
+  end
+end
 
 class Test::Unit::AutoRunner    # :nodoc:
   RUNNERS[:specdox] = lambda {
@@ -28,6 +55,23 @@ module Test::Spec
 
   CONTEXTS = {}                 # :nodoc:
   SHARED_CONTEXTS = Hash.new { |h,k| h[k] = [] } # :nodoc:
+  
+  def self.focused_mode?
+    @focused_mode
+  end
+  
+  def self.set_focused_mode(bool, focused_context = nil)
+    @focused_mode = bool
+    ignore_previous_specs(focused_context) if bool
+  end
+  
+  def self.ignore_previous_specs(exclude = nil)
+    Test::Spec::CONTEXTS.each do |name, context|
+      context.ignore = true unless name == exclude
+      context.testcase.instance_variable_set(:@__ignore, true) unless name == exclude
+    end
+  end
+  
 
   class DefinitionError < StandardError
   end
@@ -326,25 +370,26 @@ class Test::Spec::TestCase
   attr_reader :testcase
   attr_reader :name
   attr_reader :position
+  attr_accessor :ignore
 
   module InstanceMethods
     def setup                 # :nodoc:
       $TEST_SPEC_TESTCASE = self
       super
-      call_methods_including_parents(:setups)
+      self.class.setups.each { |s| instance_eval(&s) }
     end
     
     def teardown              # :nodoc:
       super
-      call_methods_including_parents(:teardowns, :reverse)
+      self.class.teardowns.each { |t| instance_eval(&t) }
     end
     
     def before_all
-      call_methods_including_parents(:before_all)
+      self.class.before_all.each { |t| instance_eval(&t) }
     end
 
     def after_all
-      call_methods_including_parents(:after_all, :reverse)
+      self.class.after_all.each { |t| instance_eval(&t) }
     end
 
     def initialize(name)
@@ -363,22 +408,8 @@ class Test::Spec::TestCase
       raise Test::Spec::DefinitionError,
         "context definition is not allowed inside a specify-block"
     end
-
+    
     alias :describe :context
-
-    private
-
-    def call_methods_including_parents(method, reverse=false, klass=self.class)
-      return  unless klass
-
-      if reverse
-        klass.send(method).each { |s| instance_eval(&s) }
-        call_methods_including_parents(method, reverse, klass.parent)
-      else
-        call_methods_including_parents(method, reverse, klass.parent)
-        klass.send(method).each { |s| instance_eval(&s) }
-      end
-    end
   end
 
   module ClassMethods
@@ -394,9 +425,14 @@ class Test::Spec::TestCase
     attr_accessor :after_all
 
     # old-style (RSpec <1.0):
-
+    
     def context(name, superclass=Test::Unit::TestCase, klass=Test::Spec::TestCase, &block)
       (Test::Spec::CONTEXTS[self.name + "\t" + name] ||= klass.new(name, self, superclass)).add(&block)
+    end
+    
+    def fcontext(name, superclass=Test::Unit::TestCase, klass=Test::Spec::TestCase, &block)
+      Test::Spec.set_focused_mode(true)
+      context(name, superclass, Test::Spec::FocusedTestCase, &block)
     end
 
     def xcontext(name, superclass=Test::Unit::TestCase, &block)
@@ -404,16 +440,36 @@ class Test::Spec::TestCase
     end
     
     def specify(specname, &block)
-      raise ArgumentError, "specify needs a block"  if block.nil?
-      
+      if block.nil?
+         pspecify(specname)
+      else
+        self.count += 1                 # Let them run in order of definition
+        define_method("test_spec {%s} %03d [%s]" % [name, count, specname], &block) unless Test::Spec.focused_mode?
+      end
+    end
+    
+    def undef_previous_specs
+      instance_methods.grep(/test_spec/).each do |meth|
+        undef_method meth
+      end
+    end
+    
+    def fspecify(specname, &block)
+      Test::Spec.set_focused_mode(true, self.name)
+      undef_previous_specs
       self.count += 1                 # Let them run in order of definition
-      
       define_method("test_spec {%s} %03d [%s]" % [name, count, specname], &block)
     end
 
     def xspecify(specname, &block)
       specify specname do
         @_result.add_disabled(specname)
+      end
+    end
+
+    def pspecify(specname, &block)
+      specify specname do
+        @_result.add_pending(specname)
       end
     end
     
@@ -447,9 +503,12 @@ class Test::Spec::TestCase
     # new-style (RSpec 1.0+):
 
     alias :describe :context
+    alias :fdescribe :fcontext
     alias :describe_shared :shared_context
     alias :it :specify
     alias :xit :xspecify
+    alias :fit :fspecify
+    alias :pit :pspecify
 
     def before(kind=:each, &block)
       case kind
@@ -499,6 +558,7 @@ class Test::Spec::TestCase
     @testcase = Class.new(superclass) {
       include InstanceMethods
       extend ClassMethods
+      # p "extending onto #{self} with class #{self.class} with superclass #{superclass} and ancestors #{self.ancestors.join(",")}"
     }
 
     @@POSITION = @@POSITION + 1
@@ -511,6 +571,23 @@ class Test::Spec::TestCase
     @testcase.class_eval(&block)
     self
   end
+  
+  def ignore?
+    @ignore == true
+  end
+
+end
+
+class Test::Spec::FocusedTestCase < Test::Spec::TestCase
+
+  def initialize(name, parent=nil, superclass=Test::Unit::TestCase)
+    super
+  end
+  
+  def long_display
+    @name + " is in focused mode"
+  end
+
 end
 
 (Test::Spec::DisabledTestCase = Test::Spec::TestCase.dup).class_eval do
@@ -525,35 +602,18 @@ end
         test_case_specify(specname) { @_result.add_disabled(specname) }
       end
       alias :it :specify
+      
     end
   end
 end
 
-class Test::Spec::Disabled < Test::Unit::Failure    # :nodoc:
-  def initialize(name)
-    @name = name
-  end
-
-  def single_character_display
-    "D"
-  end
-
-  def short_display
-    @name
-  end
-
-  def long_display
-    @name + " is disabled"
-  end
-end
-
-class Test::Spec::Empty < Test::Unit::Failure    # :nodoc:
-  def initialize(name)
-    @name = name
-  end
-
-  def single_character_display
-    ""
+class Test::Spec::Failure < Test::Unit::Failure    # :nodoc:
+  attr_reader :single_character_display
+  
+  def initialize(attrs)
+    @name = attrs[:name]
+    @single_character_display = attrs[:single_character_display]
+    @long_display = attrs[:long_display]
   end
 
   def short_display
@@ -561,10 +621,27 @@ class Test::Spec::Empty < Test::Unit::Failure    # :nodoc:
   end
 
   def long_display
-    @name + " is empty"
+    @long_display % @name
   end
 end
 
+class Test::Spec::Disabled < Test::Spec::Failure    # :nodoc:
+  def initialize(name)
+    super(:name => name, :single_character_display => 'D', :long_display => "Disabled: %s")
+  end
+end
+
+class Test::Spec::Empty < Test::Spec::Failure    # :nodoc:
+  def initialize(name)
+    super(:name => name, :single_character_display => "", :long_display => "Empty: %s")
+  end
+end
+
+class Test::Spec::Pending < Test::Spec::Failure    # :nodoc:
+  def initialize(name)
+    super(:name => name, :single_character_display => 'P', :long_display => "Pending: %s")
+  end
+end
 
 # Monkey-patch test/unit to run tests in an optionally specified order.
 module Test::Unit               # :nodoc:
@@ -598,6 +675,11 @@ module Test::Unit               # :nodoc:
       notify_listeners(FAULT, Test::Spec::Disabled.new(name))
       notify_listeners(CHANGED, self)
     end  
+    
+    def add_pending(name)
+      notify_listeners(FAULT, Test::Spec::Pending.new(name))
+      notify_listeners(CHANGED, self)
+    end      
   end
 end
 
@@ -640,6 +722,11 @@ end
 
 module Kernel
   def context(name, superclass=Test::Unit::TestCase, klass=Test::Spec::TestCase, &block)     # :doc:
+    (Test::Spec::CONTEXTS[name] ||= klass.new(name, nil, superclass)).add(&block)
+  end
+  
+  def fcontext(name, superclass=Test::Unit::TestCase, klass=Test::Spec::TestCase, &block)     # :doc:
+    Test::Spec.set_focused_mode(true)
     (Test::Spec::CONTEXTS[name] ||= klass.new(name, nil, superclass)).add(&block)
   end
 

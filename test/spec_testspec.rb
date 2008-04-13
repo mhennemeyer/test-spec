@@ -352,20 +352,6 @@ context "test/spec" do
     lambda { nil.should.not.bla }.should.raise(NoMethodError)
   end
 
-  specify "has should.<predicate>?" do
-    lambda { [].should.be.empty? }.should succeed
-    lambda { [1,2,3].should.not.be.empty? }.should succeed
-
-    lambda { [].should.not.be.empty? }.should fail
-    lambda { [1,2,3].should.be.empty? }.should fail
-
-    lambda { {1=>2, 3=>4}.should.has_key? 1 }.should succeed
-    lambda { {1=>2, 3=>4}.should.not.has_key? 2 }.should succeed
-
-    lambda { nil.should.bla? }.should.raise(NoMethodError)
-    lambda { nil.should.not.bla? }.should.raise(NoMethodError)
-  end
-
   specify "has should <operator> (>, >=, <, <=, ===)" do
     lambda { 2.should.be > 1 }.should succeed
     lambda { 1.should.be > 2 }.should fail
@@ -392,9 +378,6 @@ context "test/spec" do
   specify "is robust against careless users" do
     lambda {
       $contextscope.specify
-    }.should.raise(ArgumentError)
-    lambda {
-      $contextscope.specify "foo"
     }.should.raise(ArgumentError)
     lambda {
       $contextscope.xspecify
@@ -492,10 +475,16 @@ context "test/spec" do
   end
 
   xspecify "disabled specification" do
-    # just trying
+    flunk
   end
 
-  xspecify "empty specification"
+  xspecify "empty disabled specification"
+
+  pspecify "pending specification" do
+    flunk
+  end
+
+  pspecify "empty pending specification"
 
   context "more disabled" do
     xspecify "this is intentional" do
@@ -543,76 +532,6 @@ context "setup/teardown" do
   end
 end
 
-context "before all" do
-  before(:all) { @a = 1 }
-
-  specify "runs parent before all" do
-    @a.should == 1
-  end
-end
-
-context "nested teardown" do
-  context "nested" do
-    specify "should call local teardown then parent teardown" do
-      @a = 3
-    end
-
-    teardown do
-      p "local td"
-      @a = 2
-    end
-  end
-
-  teardown do
-    p "global td"
-    @a.should.equal 2
-    @a = 1
-  end
-
-  after(:all) do
-    p "global aa"
-    @a.should.equal 1
-  end
-end
-
-context "before all" do
-  context "nested" do
-    before(:all) do
-      @a = 2
-    end
-
-    specify "should call parent then local" do
-      @a.should.equal 2
-      @b.should.equal 2
-    end
-  end
-
-  before(:all) do
-    @a = 1
-    @b = 2
-  end
-end
-
-context "after all" do
-  context "after nested" do
-    after(:all) do
-      @a = 2
-    end
-
-    specify "should call local then parent" do
-      self.after_all
-      @a.should.equal 1
-      @b.should.equal 2
-    end
-  end
-
-  after(:all) do
-    @b = @a 
-    @a = 1
-  end
-end
-
-
 module ContextHelper
   def foo
     42
@@ -652,51 +571,5 @@ end
 xcontext "xcontexts with subclasses", CustomTestUnitSubclass do
   specify "work great!" do
     self.should.be.a.kind_of CustomTestUnitSubclass
-  end
-end
-
-shared_context "a shared context" do
-  specify "can be included several times" do
-    true.should.be true
-  end
-
-  behaves_like "yet another shared context"
-end
-
-shared_context "another shared context" do
-  specify "can access data" do
-    @answer.should.be 42
-  end
-end
-
-shared_context "yet another shared context" do
-  specify "can include other shared contexts" do
-    true.should.be true
-  end
-end
-
-context "Shared contexts" do
-  shared_context "a nested context" do
-    specify "can be nested" do
-      true.should.be true
-    end
-  end
-
-  setup do
-    @answer = 42
-  end
-
-  behaves_like "a shared context"
-  it_should_behave_like "a shared context"
-
-  behaves_like "a nested context"
-
-  behaves_like "another shared context"
-
-  ctx = self
-  specify "should raise when the context cannot be found" do
-    should.raise(NameError) {
-      ctx.behaves_like "no such context"
-    }
   end
 end

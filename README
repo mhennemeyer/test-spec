@@ -322,8 +322,6 @@ at my site:
 * XXX, 2007: Fifth public release 0.5.
   * Allow should.<predicate>? as well as should.<predicate>.
   * Add shared contexts.
-  * Nested contexts now run the
-    setups/teardowns/before(:all)/after(:all) of their parents.
 
 
 == Contact
@@ -340,7 +338,6 @@ http://chneukirchen.org/repos/testspec
 * Eero Saynatkari for writing <tt>should.output</tt>.
 * Tuxie for writing test/spec on Rails.
 * Brian Donovan for allowing alternative superclasses.
-* Xavier Shay for implementing nested setups/teardowns.
 * Chris Wanstrath for <tt>should.raise</tt> with a block and <tt>xcontext</tt>.
 * Jean-Michel Garnier for packaging the first gem.
 * Mikko Lehtonen, Jan Wikholm, Matt Mower and Michael Fellinger for

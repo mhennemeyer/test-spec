@@ -1,9 +1,3 @@
-describe_shared "A new-style shared description" do
-  it "should work as well with shared descriptions" do
-    true.should.be true
-  end
-end
-
 describe "A new-style description" do
   before do
     @before = true
@@ -29,8 +23,16 @@ describe "A new-style description" do
   end
 
   xit "this is disabled" do
-    bla
+    flunk
   end
+
+  pit "this is pending and no assertions yet exist"
+
+  pit "this is pending with some assertions defined, but test-spec won't run it" do
+    flunk
+  end
+  
+  it "this is pending because it doesn't have a block"
 
   after do
     @a.should.equal 2
@@ -68,8 +70,6 @@ describe "A new-style description" do
     it "should work" do
     end
   end
-
-  behaves_like "A new-style shared description"
 end
 
 describe "An empty description" do
