@@ -1,0 +1,27 @@
+class Autotest::Testspec < Autotest
+  def initialize
+    super
+    @exceptions = /\/\./
+    @test_mappings = {
+      /^lib\/(.*)\.rb$/ => proc { |filename, m|
+        if filename == "lib/test/spec.rb"
+          return files_matching(%r|^test/.*|)
+        end
+        specs = []
+        file = File.basename(filename).gsub("_", "_?").gsub(".rb", "")
+        specs << files_matching(%r%^test/spec#{file}.rb$%)
+        specs << files_matching(%r%^test/spec_#{file}.rb$%)
+        specs
+      },
+      /^test\/spec.*\.rb$/ => proc { |filename, _|
+        filename
+      },
+    }
+  end
+  
+  def files_matching regexp
+    @files.keys.select { |k|
+      k =~ regexp
+    }
+  end
+end
