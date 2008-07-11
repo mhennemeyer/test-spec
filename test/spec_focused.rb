@@ -1,7 +1,4 @@
-$: << File.dirname(__FILE__) + '/../lib/'
-require 'mocha'
-require 'redgreen'
-require 'test/spec'
+require 'helper'
 
 describe "focused methods" do
   it "context methods are extended on to the test case" do
