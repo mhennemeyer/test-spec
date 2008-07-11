@@ -1,4 +1,4 @@
-require 'helper'
+require File.expand_path(File.join(File.dirname(__FILE__), *%w[helper]))
 
 describe "focused methods" do
   it "context methods are extended on to the test case" do
