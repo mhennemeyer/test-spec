@@ -1,8 +1,11 @@
 = test/spec, a BDD interface for Test::Unit
+= Relevance Fork by Rob Sanheim
 
 Copyright (C) 2006, 2007  Christian Neukirchen <mailto:chneukirchen@gmail.com>
 
+== What is this fork?
 
+This is a fork to add some new features to make dev flow easier with autotest.
 == What is test/spec?
 
 test/spec layers an RSpec-inspired interface on top of Test::Unit, so
