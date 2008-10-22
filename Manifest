@@ -13,7 +13,6 @@ lib/test/spec.rb
 Rakefile
 README.rdoc
 ROADMAP
-SPECS
 test/helper.rb
 test/spec_dox.rb
 test/spec_flexmock.rb

@@ -44,6 +44,8 @@ task "SPECS" do
   ruby "bin/specrb -Ilib:test -a --rdox >SPECS"
 end
 
+task :gem => ["SPECS"]
+
 desc "Run all the tests"
 task :test => :chmod do
   ruby "bin/specrb -Ilib:test -w #{ENV['TEST'] || '-a'} #{ENV['TESTOPTS']}"
