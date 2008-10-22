@@ -2,7 +2,7 @@
 
 module Test
   module Spec
-    VERSION = "0.4.0.5"
+    VERSION = "0.4.1"
   end
 end
 
