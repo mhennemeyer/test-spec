@@ -2,9 +2,9 @@ require 'yaml'
 require 'rubygems/specification'
 require 'test/spec'
 
-describe 'gem' do
+describe 'gemspec' do
   
-  it 'is safe' do
+  it 'is safe for Github' do
     data = File.read(File.join(File.dirname(__FILE__), *%w[.. test-spec.gemspec]))
     spec = nil
 
@@ -13,6 +13,7 @@ describe 'gem' do
     else
       spec = YAML.load(data)
     end
+    spec.should.not.be.nil
   end
 
 end
