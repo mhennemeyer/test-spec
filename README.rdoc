@@ -353,6 +353,8 @@ Please mail bugs, suggestions and patches to
 Darcs repository ("darcs send" is welcome for patches):
 http://chneukirchen.org/repos/testspec
 
+Continuous Integration at RunCodeRun:
+http://runcoderun.com/relevance/test-spec
 
 == Thanks to
 

@@ -20,7 +20,8 @@ echoe = Echoe.new('test-spec', Test::Spec::VERSION) do |p|
   test/spec is a clean-room implementation that maps most kinds of
   Test::Unit assertions to a `should'-like syntax.
   
-  This is a fork of the main version to add some features and make thigns a bit easier for developers.
+  This is a fork of the main version to add some features and make things a bit easier for developers.  It grew out of 
+  day to day use at Relevance (http://thinkrelevance.com).
 EOF
   p.url        = "http://github.com/relevance/test-spec"
   p.rdoc_pattern = /^(lib|bin|ext)|txt|rdoc|CHANGELOG|LICENSE|SPECS$/
