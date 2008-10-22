@@ -25,6 +25,7 @@ describe "turning on focused mode" do
       describe("first context") { it("should never run") { assert 1 == 2 } }
       fcontext("second context") { it("focuses on this spec") { assert 1 == 1} }
     end
+    
     Test::Spec::CONTEXTS["first context"].ignore?.should == true
     Test::Spec::CONTEXTS["second context"].ignore?.should == false
   end
@@ -38,11 +39,15 @@ describe "turning on focused mode" do
     end
     Test::Spec::CONTEXTS["first context"].ignore?.should == true
     Test::Spec::CONTEXTS["second context"].ignore?.should == false
-    p Test::Spec::CONTEXTS["second context"].testcase.instance_methods.grep(/^test/)
   end
   
   it "undefs previous spec methods when focusing on a spec" do
-    
+    Kernel.module_eval do
+      context("my context") { 
+        it("this should be undefed") { raise }
+        fit("focuses on this spec") { assert 1 == 1} }
+    end
+    Test::Spec::CONTEXTS["my context"].testcase.instance_methods.grep(/test_spec/).size.should == 1
   end
   
 end

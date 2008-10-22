@@ -26,7 +26,7 @@ module Test
               add_suite(sub_suites, klass.suite)
             end
           end
-          sort(sub_suites).each{|s| suite << s}
+          sub_suites.each {|s| suite << s }
           suite
         end
           
@@ -55,9 +55,10 @@ module Test::Spec
 
   CONTEXTS = {}                 # :nodoc:
   SHARED_CONTEXTS = Hash.new { |h,k| h[k] = [] } # :nodoc:
-  
+  @focused_mode = false
+
   def self.focused_mode?
-    @focused_mode
+    @focused_mode 
   end
   
   def self.set_focused_mode(bool, focused_context = nil)
@@ -67,12 +68,13 @@ module Test::Spec
   
   def self.ignore_previous_specs(exclude = nil)
     Test::Spec::CONTEXTS.each do |name, context|
-      context.ignore = true unless name == exclude
-      context.testcase.instance_variable_set(:@__ignore, true) unless name == exclude
+      if name.to_s != exclude.to_s # ignore every spec except the focused one
+        context.ignore = true
+        context.testcase.instance_variable_set(:@__ignore, true)
+      end
     end
   end
   
-
   class DefinitionError < StandardError
   end
 
@@ -405,8 +407,7 @@ class Test::Spec::TestCase
     end
 
     def context(*args)
-      raise Test::Spec::DefinitionError,
-        "context definition is not allowed inside a specify-block"
+      raise Test::Spec::DefinitionError, "context definition is not allowed inside a specify-block"
     end
     
     alias :describe :context
@@ -426,8 +427,18 @@ class Test::Spec::TestCase
 
     # old-style (RSpec <1.0):
     
-    def context(name, superclass=Test::Unit::TestCase, klass=Test::Spec::TestCase, &block)
-      (Test::Spec::CONTEXTS[self.name + "\t" + name] ||= klass.new(name, self, superclass)).add(&block)
+    def context(name_or_class, superclass=Test::Unit::TestCase, klass=Test::Spec::TestCase, &block)
+      cls_string = name_or_class.is_a?(String) ? name_or_class : name_or_class.class.to_s
+      superclass = figure_out_superclass_from_name(name_or_class, superclass)
+      
+      superclass = self.superclass
+
+      if self.respond_to?(:controller_class=)
+        controller_klass = name.is_a?(Class) ? name : Test::Spec::RailsHelpers::infer_controller_class(name)
+        self.controller_class = controller_klass if controller_klass
+      end
+
+      (Test::Spec::CONTEXTS[self.name.to_s + "\t" + cls_string] ||= klass.new(cls_string, self, superclass)).add(&block)
     end
     
     def fcontext(name, superclass=Test::Unit::TestCase, klass=Test::Spec::TestCase, &block)
@@ -506,6 +517,7 @@ class Test::Spec::TestCase
     alias :fdescribe :fcontext
     alias :describe_shared :shared_context
     alias :it :specify
+    alias :they :specify
     alias :xit :xspecify
     alias :fit :fspecify
     alias :pit :pspecify
@@ -538,9 +550,9 @@ class Test::Spec::TestCase
       self.parent = parent
       
       if parent
-        self.name = parent.name + "\t" + name
+        self.name = parent.name.to_s + "\t" + name
       else
-        self.name = name
+        self.name = name.to_s
       end
 
       self.count = 0
@@ -556,8 +568,8 @@ class Test::Spec::TestCase
 
   def initialize(name, parent=nil, superclass=Test::Unit::TestCase)
     @testcase = Class.new(superclass) {
-      include InstanceMethods
-      extend ClassMethods
+      include Test::Spec::TestCase::InstanceMethods
+      extend Test::Spec::TestCase::ClassMethods
       # p "extending onto #{self} with class #{self.class} with superclass #{superclass} and ancestors #{self.ancestors.join(",")}"
     }
 
@@ -643,13 +655,29 @@ class Test::Spec::Pending < Test::Spec::Failure    # :nodoc:
   end
 end
 
+module Test::Spec::RailsHelpers
+  
+  def infer_controller_class(name)
+    cleaned_name = name[0..name.index("\t")] rescue name
+    cleaned_name.strip!
+    cleaned_name.constantize
+  rescue NameError => e
+    nil
+  end
+  
+  extend self
+end
+
 # Monkey-patch test/unit to run tests in an optionally specified order.
 module Test::Unit               # :nodoc:
   class TestSuite               # :nodoc:
     undef run
+    
     def run(result, &progress_block)
       sort!
+      
       yield(STARTED, name)
+      
       @tests.first.before_all  if @tests.first.respond_to? :before_all
       @tests.each do |test|
         test.run(result, &progress_block)
@@ -721,17 +749,24 @@ class Object
 end
 
 module Kernel
-  def context(name, superclass=Test::Unit::TestCase, klass=Test::Spec::TestCase, &block)     # :doc:
-    (Test::Spec::CONTEXTS[name] ||= klass.new(name, nil, superclass)).add(&block)
+  def context(name_or_class, superclass=Test::Unit::TestCase, klass=Test::Spec::TestCase, &block)     # :doc:
+    superclass = figure_out_superclass_from_name(name_or_class, superclass)
+
+    if superclass.respond_to?(:controller_class=)
+      controller_klass = name_or_class.is_a?(Class) ? name_or_class : Test::Spec::RailsHelpers::infer_controller_class(name_or_class)
+      superclass.controller_class = controller_klass if controller_klass
+    end
+    
+    (Test::Spec::CONTEXTS[name_or_class] ||= klass.new(name_or_class, nil, superclass)).add(&block)
   end
   
-  def fcontext(name, superclass=Test::Unit::TestCase, klass=Test::Spec::TestCase, &block)     # :doc:
+  def fcontext(name_or_class, superclass=Test::Unit::TestCase, klass=Test::Spec::TestCase, &block)     # :doc:
     Test::Spec.set_focused_mode(true)
-    (Test::Spec::CONTEXTS[name] ||= klass.new(name, nil, superclass)).add(&block)
+    context(name_or_class, superclass, Test::Spec::FocusedTestCase, &block)
   end
 
-  def xcontext(name, superclass=Test::Unit::TestCase, &block)     # :doc:
-    context(name, superclass, Test::Spec::DisabledTestCase, &block)
+  def xcontext(name_or_class, superclass=Test::Unit::TestCase, &block)     # :doc:
+    context(name_or_class, superclass, Test::Spec::DisabledTestCase, &block)
   end
 
   def shared_context(name, &block)
@@ -744,4 +779,28 @@ module Kernel
 
   private :context, :xcontext, :shared_context
   private :describe, :xdescribe, :describe_shared
+  
+    def figure_out_superclass_from_name(name_or_class, default_superclass)
+      if name_or_class.is_a?(Class)
+        if name_or_class < ActionController::Base
+          return ActionController::TestCase
+        elsif name_or_class < ActiveRecord::Base
+          return ActiveSupport::TestCase
+        elsif name_or_class < ActionMailer::Base
+          return ActionMailer::TestCase
+        end
+      end
+      
+      default_superclass
+    end
+    
+    def attempt_to_set_controller_class(name_or_class)
+      if name_or_class.is_a?(Class)
+        a_controller_class = name_or_class
+      else
+        a_controller_class = name_or_class.constantize
+      end
+      superclass.controller_class = a_controller_class
+    rescue NameError => e # swallow it - this means that name_or_class is just a descriptive name, so we can't infer anything 
+    end
 end
