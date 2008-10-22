@@ -89,7 +89,7 @@ else
   RDOC_OPTS = ['--title', "test/spec documentation",
                "--opname", "index.html",
                "--line-numbers", 
-               "--main", "README",
+               "--main", "README.rdoc",
                "--inline-source"]
   
   # Generate all the Rake tasks
@@ -111,7 +111,7 @@ EOF
     # These are actually optional, but we can't tell Gems that.
     # p.extra_deps = ['flexmock','>= 0.4.1'],['mocha','>= 0.3.2']
     p.need_tar = false          # we do that ourselves
-    p.changes = File.read("README")[/^== History\n(.*?)^==/m, 1].
+    p.changes = File.read("README.rdoc")[/^== History\n(.*?)^==/m, 1].
                                     split(/\n{2,}/).last
   end rescue nil
 
@@ -129,7 +129,7 @@ desc "Generate RDoc documentation"
 Rake::RDocTask.new(:rdoc) do |rdoc|
   rdoc.options << '--line-numbers' << '--inline-source'
   rdoc.rdoc_dir = "doc"
-  rdoc.rdoc_files.include 'README'
+  rdoc.rdoc_files.include 'README.rdoc'
   rdoc.rdoc_files.include 'ROADMAP'
   rdoc.rdoc_files.include 'SPECS'
   rdoc.rdoc_files.include('lib/**/*.rb')
