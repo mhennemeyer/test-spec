@@ -389,12 +389,12 @@ class Test::Spec::TestCase
     
     def context(name_or_class, superclass=Test::Unit::TestCase, klass=Test::Spec::TestCase, &block)
       cls_string = name_or_class.is_a?(String) ? name_or_class : name_or_class.class.to_s
-      superclass = figure_out_superclass_from_name(name_or_class, superclass)
+      superclass = Test::Spec::RailsHelper.figure_out_superclass_from_name(name_or_class, superclass)
       
       superclass = self.superclass
 
       if self.respond_to?(:controller_class=)
-        controller_klass = name.is_a?(Class) ? name : Test::Spec::RailsHelpers::infer_controller_class(name)
+        controller_klass = name.is_a?(Class) ? name : Test::Spec::RailsHelper::infer_controller_class(name)
         self.controller_class = controller_klass if controller_klass
       end
 
@@ -697,10 +697,10 @@ end
 
 module Kernel
   def context(name_or_class, superclass=Test::Unit::TestCase, klass=Test::Spec::TestCase, &block)     # :doc:
-    superclass = figure_out_superclass_from_name(name_or_class, superclass)
+    superclass = Test::Spec::RailsHelper.figure_out_superclass_from_name(name_or_class, superclass)
 
     if superclass.respond_to?(:controller_class=)
-      controller_klass = name_or_class.is_a?(Class) ? name_or_class : Test::Spec::RailsHelpers::infer_controller_class(name_or_class)
+      controller_klass = name_or_class.is_a?(Class) ? name_or_class : Test::Spec::RailsHelper::infer_controller_class(name_or_class)
       superclass.controller_class = controller_klass if controller_klass
     end
     
@@ -727,20 +727,6 @@ module Kernel
   private :context, :xcontext, :shared_context
   private :describe, :xdescribe, :describe_shared
   
-    def figure_out_superclass_from_name(name_or_class, default_superclass)
-      if name_or_class.is_a?(Class)
-        if name_or_class < ActionController::Base
-          return ActionController::TestCase
-        elsif name_or_class < ActiveRecord::Base
-          return ActiveSupport::TestCase
-        elsif name_or_class < ActionMailer::Base
-          return ActionMailer::TestCase
-        end
-      end
-      
-      default_superclass
-    end
-    
     def attempt_to_set_controller_class(name_or_class)
       if name_or_class.is_a?(Class)
         a_controller_class = name_or_class
