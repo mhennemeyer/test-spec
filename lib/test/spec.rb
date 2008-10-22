@@ -16,8 +16,6 @@ module Test
       class ObjectSpace
         
         # Open up the ObjectSpace Collector to check to see if we have set an ignore flag.
-        # TODO rename to ignore, its really ignore and not disabled
-        # TODO test this
         def collect(name=NAME)
           suite = TestSuite.new(name)
           sub_suites = []
