@@ -77,6 +77,6 @@ end
 describe "An empty description" do
 end
 
-# xdescribe "An disabled description" do
-#   it "should not be run"
-# end
+xdescribe "An disabled description" do
+  it "should not be run"
+end
