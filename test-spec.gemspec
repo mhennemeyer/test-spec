@@ -123,7 +123,7 @@ required_rubygems_version: !ruby/object:Gem::Requirement
 requirements: []
 
 rubyforge_project: test-spec
-rubygems_version: 1.2.0
+rubygems_version: 1.3.0
 specification_version: 2
 summary: Relevance fork of Behaviour Driven Development interface for Test::Unit
 test_files: 
