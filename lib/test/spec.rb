@@ -533,7 +533,6 @@ class Test::Spec::TestCase
       # p "extending onto #{self} with class #{self.class} with superclass #{superclass} and ancestors #{self.ancestors.join(",")}"
     }
 
-    @@POSITION ||= 0
     @@POSITION = @@POSITION + 1
     @testcase.init(name, @@POSITION, parent)
   end

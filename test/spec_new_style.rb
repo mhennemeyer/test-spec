@@ -1,3 +1,5 @@
+require 'test/spec'
+
 describe "A new-style description" do
   before do
     @before = true
