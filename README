@@ -5,7 +5,12 @@ Copyright (C) 2006, 2007  Christian Neukirchen <mailto:chneukirchen@gmail.com>
 
 == What is this fork?
 
-This is a fork to add some new features to make dev flow easier with autotest.
+This is a fork to add some new features to make the dev experience nicer, and also to DRY up boilerplate
+that can appear in test/spec.
+
+== What is in this fork specifically?
+
+  * Focused specs - prepend an `it` declaration with "f", so it reads `fit`, and that spec will run at the exclusion of all others.  This is great for use in autotest.
 
 == What is test/spec?
 
