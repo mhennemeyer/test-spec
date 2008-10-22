@@ -6,7 +6,7 @@ rescue LoadError => e
   puts "You must install echoe to dev/test this gem"
 end
 
-require 'test/spec/version'
+require './lib/test/spec/version'
 
 echoe = Echoe.new('test-spec', Test::Spec::VERSION) do |p|
   p.rubyforge_name = 'test-spec'
