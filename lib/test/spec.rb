@@ -728,14 +728,4 @@ module Kernel
   private :context, :xcontext, :shared_context
   private :describe, :xdescribe, :describe_shared
   
-    def attempt_to_set_controller_class(name_or_class)
-      if name_or_class.is_a?(Class)
-        a_controller_class = name_or_class
-      else
-        a_controller_class = name_or_class.constantize
-      end
-      superclass.controller_class = a_controller_class
-    rescue NameError => e 
-      # swallow it - this means that name_or_class is just a descriptive name, so we can't infer anything 
-    end
 end
