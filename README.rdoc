@@ -22,6 +22,7 @@ Specifically:
 * DRY'er, context-aware spec declarations for Rails projects.  Very similiar to Rspec's Rails support:
   
     describe UsersController # Subclasses ActionController::TestCase and sets up the UsersController properly
+    describe UserMailer # Subclasses ActionMailer::TestCase
     describe User # Subclasses ActiveSupport::TestCase for model specs
     
 
