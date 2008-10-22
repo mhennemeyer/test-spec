@@ -50,9 +50,9 @@ end                             # if not rescue LoadError
 
 
 begin
-  require 'stubba'
+  require 'mocha'
 rescue LoadError
-  context "stubba" do
+  context "mocha" do
     specify "can not be found.  BAIL OUT!" do
     end
   end
@@ -91,7 +91,7 @@ class Order
 
 end
 
-context "stubba" do
+context "mocha" do
   specify "works with test/spec and instance method stubbing" do
     order = Order.new
     order.stubs(:total_weight).returns(10)
