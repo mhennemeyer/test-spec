@@ -6,7 +6,8 @@
 == What does this fork add?
 
 This is a fork to add some new features to make the dev experience nicer, and also to DRY up boilerplate
-that can appear in test/spec.
+that can appear in test/spec.  Note that this is a fork of the 0.4 release, as we haven't merged the 0.9
+features back in yet.
 
 Specifically:
 
