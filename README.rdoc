@@ -1,5 +1,6 @@
 = test/spec, a BDD interface for Test::Unit
-= Relevance Fork by Rob Sanheim
+== Relevance Fork by Rob Sanheim
+== Original Version Christian Neukirchen
 
 Copyright (C) 2006, 2007  Christian Neukirchen <mailto:chneukirchen@gmail.com>
 
