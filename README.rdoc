@@ -11,7 +11,15 @@ that can appear in test/spec.
 
 == What is in this fork specifically?
 
-  * Focused specs - prepend an `it` declaration with "f", so it reads `fit`, and that spec will run at the exclusion of all others.  This is great for use in autotest.
+  * Focused specs - prepend an `it` declaration with "f", so it reads `fit`, and that spec will run at the exclusion of all others.  This is great for use in autotest, when you make a change and ten specs start failing and you want to focus on one spec at a time as you move through them and fix them.
+  
+  * DRY'er, context-aware spec declarations for Rails projects.  Very similiar to Rspec's Rails support:
+  
+  describe UsersController do
+  # Automatically subclasses ActionController::TestCase and setups up the UsersController properly
+  end
+  
+    
 
 == What is test/spec?
 
