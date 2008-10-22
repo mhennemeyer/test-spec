@@ -1,65 +1,42 @@
-# Rakefile for testspec.  -*-ruby-*-
-require 'rake/rdoctask'
-require 'rake/testtask'
-
-
-desc "Run all the tests"
-task :default => [:test]
-
-desc "Do predistribution stuff"
-task :predist => [:chmod, :changelog, :rdoc]
-
-
-desc "Make an archive as .tar.gz"
-task :dist => :test do
-  system "export DARCS_REPO=#{File.expand_path "."}; " +
-         "darcs dist -d test-spec-#{get_darcs_tree_version}"
+require 'rubygems'
+begin
+  gem 'echoe'
+  require 'echoe'
+rescue LoadError => e
+  puts "You must install echoe to dev/test this gem"
 end
 
-# Helper to retrieve the "revision number" of the darcs tree.
-def get_darcs_tree_version
-  unless File.directory? "_darcs"
-    load 'lib/test/spec/version.rb'
-    return Test::Spec::VERSION
-  end
+require 'test/spec/version'
 
-  changes = `darcs changes`
-  count = 0
-  tag = "0.0"
+echoe = Echoe.new('test-spec', Test::Spec::VERSION) do |p|
+  p.rubyforge_name = 'test-spec'
+  p.author = 'Christian Neukirchen'
+  p.email = 'chneukirchen@gmail.com'
+  p.summary = 'Relevance fork of Behaviour Driven Development interface for Test::Unit'
+  p.description = <<-EOF
+  test/spec layers an RSpec-inspired interface on top of Test::Unit, so
+  you can mix TDD and BDD (Behavior-Driven Development).
+
+  test/spec is a clean-room implementation that maps most kinds of
+  Test::Unit assertions to a `should'-like syntax.
   
-  changes.each("\n\n") { |change|
-    head, title, desc = change.split("\n", 3)
-    
-    if title =~ /^  \*/
-      # Normal change.
-      count += 1
-    elsif title =~ /tagged (.*)/
-      # Tag.  We look for these.
-      tag = $1
-      break
-    else
-      warn "Unparsable change: #{change}"
-    end
-  }
-
-  tag + "." + count.to_s
+  This is a fork of the main version to add some features and make thigns a bit easier for developers.
+EOF
+  p.url        = "http://github.com/relevance/test-spec"
+  p.rdoc_pattern = /^(lib|bin|ext)|txt|rdoc|CHANGELOG|LICENSE|SPECS$/
+  rdoc_template = `allison --path`.strip << ".rb"
+  p.rdoc_template = rdoc_template
 end
 
-def manifest
-  `darcs query manifest 2>/dev/null`.split("\n").map { |f| f.gsub(/\A\.\//, '') }
-end
+echoe.spec.executables << "specrb"
+echoe.spec.add_development_dependency "allison"
+echoe.spec.add_development_dependency "markaby"
 
 
 desc "Make binaries executable"
 task :chmod do
   Dir["bin/*"].each { |binary| File.chmod(0775, binary) }
 end
-
-desc "Generate a ChangeLog"
-task :changelog do
-  system "darcs changes --repo=#{ENV["DARCS_REPO"] || "."} >ChangeLog"
-end
-
 
 desc "Generate RDox"
 task "SPECS" do
@@ -70,67 +47,6 @@ desc "Run all the tests"
 task :test => :chmod do
   ruby "bin/specrb -Ilib:test -w #{ENV['TEST'] || '-a'} #{ENV['TESTOPTS']}"
 end
-
-
-begin
-  require 'rubygems'
-
-  require 'rake'
-  require 'rake/clean'
-  require 'rake/packagetask'
-  require 'rake/gempackagetask'
-  require 'fileutils'
-rescue LoadError
-  # Too bad.
-else
-  spec = Gem::Specification.new do |s|
-    s.name            = "test-spec"
-    s.version         = get_darcs_tree_version
-    s.platform        = Gem::Platform::RUBY
-    s.summary         = "a Behaviour Driven Development interface for Test::Unit"
-    s.description = <<-EOF
-test/spec layers an RSpec-inspired interface on top of Test::Unit, so
-you can mix TDD and BDD (Behavior-Driven Development).
-
-test/spec is a clean-room implementation that maps most kinds of
-Test::Unit assertions to a `should'-like syntax.
-    EOF
-
-    s.files           = manifest + %w(SPECS)
-    s.bindir          = 'bin'
-    s.executables     << 'specrb'
-    s.require_path    = 'lib'
-    s.has_rdoc        = true
-    s.extra_rdoc_files = ['README.rdoc', 'SPECS', 'ROADMAP']
-    s.test_files      = Dir['test/{test,spec}_*.rb']
-
-    s.author          = 'Christian Neukirchen'
-    s.email           = 'chneukirchen@gmail.com'
-    s.homepage        = "http://test-spec.rubyforge.org"
-    s.rubyforge_project = 'test-spec'
-  end
-
-  task :package => [:dist]
-
-  Rake::GemPackageTask.new(spec) do |p|
-    p.gem_spec = spec
-    p.need_tar = false
-    p.need_zip = false
-  end
-end
-
-
-desc "Generate RDoc documentation"
-Rake::RDocTask.new(:rdoc) do |rdoc|
-  rdoc.options << '--line-numbers' << '--inline-source'
-  rdoc.rdoc_dir = "doc"
-  rdoc.rdoc_files.include 'README.rdoc'
-  rdoc.rdoc_files.include 'ROADMAP'
-  rdoc.rdoc_files.include 'SPECS'
-  rdoc.rdoc_files.include('lib/**/*.rb')
-end
-task :rdoc => "SPECS"
-
 
 begin
   require 'rcov/rcovtask'
