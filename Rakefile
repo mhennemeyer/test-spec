@@ -7,7 +7,7 @@ desc "Run all the tests"
 task :default => [:test]
 
 desc "Do predistribution stuff"
-task :predist => [:chmod, :changelog, :rdoc, :distmanifest]
+task :predist => [:chmod, :changelog, :rdoc]
 
 
 desc "Make an archive as .tar.gz"
@@ -45,6 +45,10 @@ def get_darcs_tree_version
   tag + "." + count.to_s
 end
 
+def manifest
+  `darcs query manifest 2>/dev/null`.split("\n").map { |f| f.gsub(/\A\.\//, '') }
+end
+
 
 desc "Make binaries executable"
 task :chmod do
@@ -62,66 +66,57 @@ task "SPECS" do
   ruby "bin/specrb -Ilib:test -a --rdox >SPECS"
 end
 
+desc "Run all the tests"
+task :test => :chmod do
+  ruby "bin/specrb -Ilib:test -w #{ENV['TEST'] || '-a'} #{ENV['TESTOPTS']}"
+end
+
 
 begin
-  # To generate the gem, run "rake package"
-
-  $" << "sources"  if defined? FromSrc
   require 'rubygems'
 
   require 'rake'
   require 'rake/clean'
   require 'rake/packagetask'
   require 'rake/gempackagetask'
-  require 'rake/contrib/rubyforgepublisher'
   require 'fileutils'
-  require 'hoe'
 rescue LoadError
   # Too bad.
-
-  desc "Run all the tests"
-  task :test => :chmod do
-    ruby "bin/specrb -Ilib:test -w #{ENV['TEST'] || '-a'} #{ENV['TESTOPTS']}"
-  end
-
 else
-  
-  RDOC_OPTS = ['--title', "test/spec documentation",
-               "--opname", "index.html",
-               "--line-numbers", 
-               "--main", "README.rdoc",
-               "--inline-source"]
-  
-  # Generate all the Rake tasks
-  # Run 'rake -T' to see list of generated tasks (from gem root directory)
-  hoe = Hoe.new("test-spec", get_darcs_tree_version) do |p|
-    p.author = "Christian Neukirchen"
-    p.description = "a Behaviour Driven Development interface for Test::Unit"
-    p.email = "chneukirchen@gmail.com"
-    p.summary = <<EOF
+  spec = Gem::Specification.new do |s|
+    s.name            = "test-spec"
+    s.version         = get_darcs_tree_version
+    s.platform        = Gem::Platform::RUBY
+    s.summary         = "a Behaviour Driven Development interface for Test::Unit"
+    s.description = <<-EOF
 test/spec layers an RSpec-inspired interface on top of Test::Unit, so
 you can mix TDD and BDD (Behavior-Driven Development).
 
 test/spec is a clean-room implementation that maps most kinds of
 Test::Unit assertions to a `should'-like syntax.
-EOF
-    p.url = "http://test-spec.rubyforge.org"
-    p.test_globs = ["test/**/{test,spec}_*.rb"]
-    p.clean_globs = []
-    # These are actually optional, but we can't tell Gems that.
-    # p.extra_deps = ['flexmock','>= 0.4.1'],['mocha','>= 0.3.2']
-    p.need_tar = false          # we do that ourselves
-    p.changes = File.read("README.rdoc")[/^== History\n(.*?)^==/m, 1].
-                                    split(/\n{2,}/).last
-  end rescue nil
+    EOF
 
-  task :package => ["Manifest.txt", :dist]
+    s.files           = manifest + %w(SPECS)
+    s.bindir          = 'bin'
+    s.executables     << 'specrb'
+    s.require_path    = 'lib'
+    s.has_rdoc        = true
+    s.extra_rdoc_files = ['README.rdoc', 'SPECS', 'ROADMAP']
+    s.test_files      = Dir['test/{test,spec}_*.rb']
 
-  # Yes, this is ridiculous.
-  hoe.spec.dependencies.delete_if { |dep| dep.name == "hoe" } if hoe
-  Rake.application.instance_variable_get(:@tasks).delete :docs
-  Rake.application.instance_variable_get(:@tasks).delete "doc/index.html"
-  task :docs => :rdoc
+    s.author          = 'Christian Neukirchen'
+    s.email           = 'chneukirchen@gmail.com'
+    s.homepage        = "http://test-spec.rubyforge.org"
+    s.rubyforge_project = 'test-spec'
+  end
+
+  task :package => [:dist]
+
+  Rake::GemPackageTask.new(spec) do |p|
+    p.gem_spec = spec
+    p.need_tar = false
+    p.need_zip = false
+  end
 end
 
 
@@ -136,20 +131,6 @@ Rake::RDocTask.new(:rdoc) do |rdoc|
 end
 task :rdoc => "SPECS"
 
-
-desc "Generate Manifest.txt"
-task "Manifest.txt" do
-  system "darcs query manifest | sed 's:^./::' >Manifest.txt"
-end
-
-desc "Generate Manifest.txt for dist"
-task :distmanifest do
-  File.open("Manifest.txt", "wb") { |manifest|
-    Dir["**/*"].each { |file|
-      manifest.puts file  if File.file? file
-    }
-  }
-end
 
 begin
   require 'rcov/rcovtask'
