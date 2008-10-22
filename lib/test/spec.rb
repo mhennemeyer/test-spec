@@ -9,29 +9,7 @@
 require 'test/unit'
 require 'test/unit/collector'
 require 'test/unit/collector/objectspace'
-
-module Test
-  module Unit
-    module Collector
-      class ObjectSpace
-        
-        # Open up the ObjectSpace Collector to check to see if we have set an ignore flag.
-        def collect(name=NAME)
-          suite = TestSuite.new(name)
-          sub_suites = []
-          @source.each_object(Class) do |klass|
-            if (Test::Unit::TestCase > klass) && !klass.instance_variable_get(:@__ignore)
-              add_suite(sub_suites, klass.suite)
-            end
-          end
-          sub_suites.each {|s| suite << s }
-          suite
-        end
-          
-      end
-    end
-  end
-end
+require 'test/spec/focused/collector-extensions'
 
 class Test::Unit::AutoRunner    # :nodoc:
   RUNNERS[:specdox] = lambda {
@@ -50,29 +28,13 @@ end
 
 module Test::Spec
   require 'test/spec/version'
+  require 'test/spec/focused/focused'
 
   CONTEXTS = {}                 # :nodoc:
   SHARED_CONTEXTS = Hash.new { |h,k| h[k] = [] } # :nodoc:
-  @focused_mode = false
+  # @focused_mode = false
+  include Test::Spec::Focused
 
-  def self.focused_mode?
-    @focused_mode 
-  end
-  
-  def self.set_focused_mode(bool, focused_context = nil)
-    @focused_mode = bool
-    ignore_previous_specs(focused_context) if bool
-  end
-  
-  def self.ignore_previous_specs(exclude = nil)
-    Test::Spec::CONTEXTS.each do |name, context|
-      if name.to_s != exclude.to_s # ignore every spec except the focused one
-        context.ignore = true
-        context.testcase.instance_variable_set(:@__ignore, true)
-      end
-    end
-  end
-  
   class DefinitionError < StandardError
   end
 
