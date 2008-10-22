@@ -1,6 +1,6 @@
 = test/spec, a BDD interface for Test::Unit
 
-=== Copyright (C) 2006, 2007 Christian Neukirchen <mailto:chneukirchen@gmail.com>
+=== Copyright (C) 2006, 2007, 2008  Christian Neukirchen <mailto:chneukirchen@gmail.com>
 === Relevance Fork by Rob Sanheim
 
 == What does this fork add?
