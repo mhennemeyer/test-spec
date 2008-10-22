@@ -1,25 +1,27 @@
 = test/spec, a BDD interface for Test::Unit
 
+=== Copyright (C) 2006, 2007 Christian Neukirchen <mailto:chneukirchen@gmail.com>
 === Relevance Fork by Rob Sanheim
-=== Original Version Christian Neukirchen
 
-Copyright (C) 2006, 2007  Christian Neukirchen <mailto:chneukirchen@gmail.com>
-
-== What is this fork?
+== What does this fork add?
 
 This is a fork to add some new features to make the dev experience nicer, and also to DRY up boilerplate
 that can appear in test/spec.
 
-== What is in this fork specifically?
+Specifically:
 
-  * Focused specs - prepend an `it` declaration with "f", so it reads `fit`, and that spec will run at the exclusion of all others.  This is great for use in autotest, when you make a change and ten specs start failing and you want to focus on one spec at a time as you move through them and fix them.
+* Rspec style pending specs - leave off the block, and the spec is automatically pending:
+
+    it "this is a pending spec" 
+    
+* Focused specs - prepend an `it` declaration with "f", so it reads `fit`, and that spec will run at the exclusion of all others.  This is great for use in autotest, when you make a change and ten specs start failing and you want to focus on one spec at a time as you move through them and fix them.  For example:
+
+    fit "can create things"  # test/spec will only run this spec, and ignore all others, until you remove the leading "f"
+
+* DRY'er, context-aware spec declarations for Rails projects.  Very similiar to Rspec's Rails support:
   
-  * DRY'er, context-aware spec declarations for Rails projects.  Very similiar to Rspec's Rails support:
-  
-  describe UsersController do
-  # Automatically subclasses ActionController::TestCase and setups up the UsersController properly
-  end
-  
+    describe UsersController # Subclasses ActionController::TestCase and sets up the UsersController properly
+    describe User # Subclasses ActiveSupport::TestCase for model specs
     
 
 == What is test/spec?
