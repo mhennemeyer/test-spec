@@ -29,10 +29,10 @@ end
 module Test::Spec
   require 'test/spec/version'
   require 'test/spec/focused/focused'
+  require 'test/spec/rails_helper'
 
   CONTEXTS = {}                 # :nodoc:
   SHARED_CONTEXTS = Hash.new { |h,k| h[k] = [] } # :nodoc:
-  # @focused_mode = false
   include Test::Spec::Focused
 
   class DefinitionError < StandardError
@@ -615,19 +615,6 @@ class Test::Spec::Pending < Test::Spec::Failure    # :nodoc:
   end
 end
 
-module Test::Spec::RailsHelpers
-  
-  def infer_controller_class(name)
-    cleaned_name = name[0..name.index("\t")] rescue name
-    cleaned_name.strip!
-    cleaned_name.constantize
-  rescue NameError => e
-    nil
-  end
-  
-  extend self
-end
-
 # Monkey-patch test/unit to run tests in an optionally specified order.
 module Test::Unit               # :nodoc:
   class TestSuite               # :nodoc:
@@ -761,6 +748,7 @@ module Kernel
         a_controller_class = name_or_class.constantize
       end
       superclass.controller_class = a_controller_class
-    rescue NameError => e # swallow it - this means that name_or_class is just a descriptive name, so we can't infer anything 
+    rescue NameError => e 
+      # swallow it - this means that name_or_class is just a descriptive name, so we can't infer anything 
     end
 end
